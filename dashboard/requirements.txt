@@ -1,0 +1,5 @@
+streamlit
+plotly
+duckdb
+pandas
+kaleido==0.2.1
