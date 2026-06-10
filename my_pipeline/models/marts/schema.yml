@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: mart_sales
+    description: "Daily sales aggregated by date, state, city and category — primary table for revenue dashboards"
+    columns:
+      - name: order_month
+        tests:
+          - not_null
+      - name: total_revenue
+        tests:
+          - not_null
+
+  - name: mart_customers
+    description: "One row per unique customer — LTV, segmentation, and delivery experience"
+    columns:
+      - name: customer_unique_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_segment
+        tests:
+          - not_null
+
+  - name: mart_sellers
+    description: "One row per seller — GMV, review score, delivery performance, and health score"
+    columns:
+      - name: seller_id
+        tests:
+          - unique
+          - not_null
+      - name: seller_health_score
+        tests:
+          - not_null
+
+  - name: mart_delivery
+    description: "Monthly delivery performance by state — SLA tracking and late delivery analysis"
+    columns:
+      - name: order_month
+        tests:
+          - not_null
+      - name: on_time_delivery_rate
+        tests:
+          - not_null
