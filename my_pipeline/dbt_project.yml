@@ -1,36 +1,41 @@
-
-# Name your project! Project names should contain only lowercase characters
-# and underscores. A good package name should reflect your organization's
-# name or the intended use of these models
+# Project name — must match the 'name' field and folder references
 name: 'my_pipeline'
 version: '1.0.0'
+config-version: 2
 
-# This setting configures which "profile" dbt uses for this project.
+# This tells dbt which profile in profiles.yml to use for connecting to MotherDuck
 profile: 'my_pipeline'
 
-# These configurations specify where dbt should look for different types of files.
-# The `model-paths` config, for example, states that models in this project can be
-# found in the "models/" directory. You probably won't need to change these!
-model-paths: ["models"]
-analysis-paths: ["analyses"]
-test-paths: ["tests"]
-seed-paths: ["seeds"]
-macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
+# File paths — tells dbt where to find each type of file
+model-paths: ["models"]       # all your .sql model files live here
+test-paths: ["tests"]         # custom tests live here
+seed-paths: ["seeds"]         # CSV seed files live here
+analysis-paths: ["analyses"]  # ad-hoc analysis SQL files live here
+macro-paths: ["macros"]       # reusable SQL macros live here
 
-clean-targets:         # directories to be removed by `dbt clean`
+# dbt build artifacts go here — never commit this folder to git
+target-path: "target"
+
+# These folders get wiped when you run dbt clean
+clean-targets:
   - "target"
   - "dbt_packages"
 
-
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
-
-# In this example config, we tell dbt to build all models in the example/
-# directory as views. These settings can be overridden in the individual model
-# files using the `{{ config(...) }}` macro.
+# Materialization config — tells dbt HOW to build each layer in MotherDuck
+# view = a virtual table, no storage cost, rebuilt every time it's queried
+# table = a real table, stored in MotherDuck, faster for dashboards
 models:
   my_pipeline:
-    # Config indicated by + and applies to all files under models/example/
-    example:
+
+    # Staging: views because they're lightweight and just clean raw data
+    staging:
       +materialized: view
+
+    # Intermediate: views because they're joining/enriching, not final output
+    intermediate:
+      +materialized: view
+
+    # Marts: tables because Tableau/Power BI will query these repeatedly
+    # storing as tables makes dashboard queries much faster
+    marts:
+      +materialized: table
