@@ -88,7 +88,7 @@ div[data-testid="stRadio"] label:hover { border-color: #6366f1 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Chart layout: no gridlines, no axis titles, readable tick labels ──────────
+# ── Base chart layout ─────────────────────────────────────────────────────────
 CHART_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -97,14 +97,16 @@ CHART_LAYOUT = dict(
     xaxis=dict(
         showgrid=False,
         zeroline=False,
-        showline=False,
+        showline=True,
+        linecolor="#1e2d45",
         title_text="",
         tickfont=dict(size=12, color="#94a3b8"),
     ),
     yaxis=dict(
         showgrid=False,
         zeroline=False,
-        showline=False,
+        showline=True,
+        linecolor="#1e2d45",
         title_text="",
         tickfont=dict(size=12, color="#94a3b8"),
     ),
@@ -144,9 +146,11 @@ def kpi(label, value, delta="", cls="neutral"):
 def chart(title, insight, fig, key, height=300):
     fig.update_layout(height=height)
     fig.update_layout(**CHART_LAYOUT)
-    # Ensure axis titles are always blank (catches go.Figure charts too)
-    fig.update_xaxes(title_text="", showgrid=False, zeroline=False, showline=False)
-    fig.update_yaxes(title_text="", showgrid=False, zeroline=False, showline=False)
+    # Clean up axis titles only — do NOT override showline so per-chart settings survive
+    fig.update_xaxes(title_text="", showgrid=False, zeroline=False,
+                     tickfont=dict(size=12, color="#94a3b8"))
+    fig.update_yaxes(title_text="", showgrid=False, zeroline=False,
+                     tickfont=dict(size=12, color="#94a3b8"))
     img_bytes = fig.to_image(format="png", width=700, height=height, scale=2)
     img_b64 = base64.b64encode(img_bytes).decode()
     st.markdown(f"""
@@ -296,6 +300,9 @@ elif page == "Customers":
                 labels={"segment": "", "count": ""},
             )
             fig.update_traces(textfont_size=12)
+            # Pie has no axes — disable showline so it doesn't draw a box
+            fig.update_xaxes(showline=False)
+            fig.update_yaxes(showline=False)
             chart("Customer Segment Mix",
                   "Split of one-time, repeat (2–3 orders), and loyal (4+ orders) buyers. A healthy business grows its repeat and loyal share over time.",
                   fig, "c1")
@@ -307,6 +314,9 @@ elif page == "Customers":
                 color_discrete_sequence=[C["indigo"]],
                 labels={"lifetime_revenue": "", "count": ""},
             )
+            # Show baseline only on x for histogram
+            fig2.update_xaxes(showline=True, linecolor="#1e2d45")
+            fig2.update_yaxes(showline=False)
             chart("LTV Distribution",
                   "Spread of lifetime spend across all customers (top 5% removed as outliers). Right-skew means most customers spend modestly — a few drive outsized value.",
                   fig2, "c2")
@@ -319,6 +329,11 @@ elif page == "Customers":
                 color_discrete_sequence=[C["indigo"], C["green"], C["amber"]],
                 labels={"customer_segment": "", "avg_order_value": ""},
             )
+            # Both axes visible so box positions and values read clearly
+            fig3.update_xaxes(showline=True, linecolor="#1e2d45",
+                               tickfont=dict(size=13, color="#cbd5e1"))
+            fig3.update_yaxes(showline=True, linecolor="#1e2d45",
+                               tickfont=dict(size=12, color="#94a3b8"))
             chart("Avg Order Value by Segment",
                   "Do loyal customers spend more per order? A higher AOV in the loyal segment confirms that retention investment pays off through bigger basket sizes.",
                   fig3, "c3")
@@ -329,9 +344,14 @@ elif page == "Customers":
                 x="total_orders", y="lifetime_revenue",
                 color="customer_segment",
                 color_discrete_sequence=[C["indigo"], C["green"], C["amber"]],
-                opacity=0.45,
+                opacity=0.55,
                 labels={"total_orders": "", "lifetime_revenue": "", "customer_segment": "Segment"},
             )
+            # Integer ticks on x (order counts), baseline on both axes
+            fig4.update_xaxes(showline=True, linecolor="#1e2d45", dtick=1,
+                               tickfont=dict(size=12, color="#94a3b8"))
+            fig4.update_yaxes(showline=True, linecolor="#1e2d45",
+                               tickfont=dict(size=12, color="#94a3b8"))
             chart("Orders vs Lifetime Revenue",
                   "Each dot is a customer. Steep upward clusters confirm more orders reliably predict higher LTV — every repeat purchase compounds total value.",
                   fig4, "c4")
@@ -367,6 +387,8 @@ elif page == "Sellers":
                 color_discrete_sequence=[C["indigo"]],
                 labels={"seller_health_score": "", "count": ""},
             )
+            fig.update_xaxes(showline=True, linecolor="#1e2d45")
+            fig.update_yaxes(showline=False)
             chart("Seller Health Score Distribution",
                   "Composite 0–100 score: review rating (40%) + on-time delivery rate (40%) + order volume (20%). Sellers below 50 are flagged as at-risk.",
                   fig, "s1")
@@ -386,6 +408,8 @@ elif page == "Sellers":
                     "total_orders": "Orders",
                 },
             )
+            fig2.update_xaxes(showline=True, linecolor="#1e2d45")
+            fig2.update_yaxes(showline=True, linecolor="#1e2d45")
             chart("Review Score vs GMV",
                   "Bubble size = order volume, color = on-time delivery rate. High-revenue sellers with low scores are a reputation risk that needs account management.",
                   fig2, "s2")
@@ -401,7 +425,9 @@ elif page == "Sellers":
                 "seller_health_score": "Health Score",
             },
         )
-        fig3.update_xaxes(tickangle=45, tickfont=dict(size=9))
+        fig3.update_xaxes(tickangle=45, tickfont=dict(size=9, color="#94a3b8"),
+                           showline=True, linecolor="#1e2d45")
+        fig3.update_yaxes(showline=False)
         chart("Top 20 Sellers by GMV",
               "Highest-revenue sellers colored by health score. Red bars with high GMV are high-risk — strong revenue but poor service quality threatens long-term retention.",
               fig3, "s3", height=340)
@@ -489,6 +515,8 @@ elif page == "Delivery":
         )
         fig3.add_hline(y=80, line_dash="dash", line_color=C["amber"],
                        annotation_text="80% target", annotation_font_color=C["amber"])
+        fig3.update_xaxes(showline=True, linecolor="#1e2d45")
+        fig3.update_yaxes(showline=False)
         chart("On-Time Rate by State",
               "States ranked by on-time delivery rate, colored by avg days to deliver. Red states below the 80% line are the highest-priority logistics problem areas.",
               fig3, "d3", height=340)
