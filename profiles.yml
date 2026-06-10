@@ -1,0 +1,8 @@
+my_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "md:olist?motherduck_token={{ env_var('MOTHERDUCK_TOKEN') }}"
+      schema: dbt_kpatil
+      threads: 4
